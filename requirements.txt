@@ -1,0 +1,6 @@
+fastapi
+google-genai
+httpx
+pydantic[email]
+python-dotenv
+uvicorn[standard]

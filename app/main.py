@@ -16,6 +16,7 @@ from google.genai import types
 from pydantic import BaseModel, EmailStr, Field
 
 from app.rag.documents import build_chunks
+from app.rag.routes import router as ai_router
 
 
 # 1. Configuration
@@ -193,6 +194,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Register the AI router.
+# All routes inside this router require the existing API key.
+app.include_router(
+    ai_router,
+    dependencies=[Depends(require_api_key)],
+)
+
 
 # 7. Request and response models
 class CustomerCreate(BaseModel):
@@ -363,8 +371,7 @@ def ingest_knowledge() -> dict[str, int | str]:
                 detail="No non-empty Markdown documents were found.",
             )
 
-        # Prepare embeddings before writing, so a failed API call
-        # does not leave a partially updated knowledge index.
+        # Generate all embeddings before writing to the database.
         indexed_chunks: list[tuple[object, list[float]]] = []
 
         for chunk in chunks:
@@ -466,8 +473,14 @@ def search_knowledge(
             left * right
             for left, right in zip(query_vector, stored_vector)
         )
-        query_norm = math.sqrt(sum(value * value for value in query_vector))
-        stored_norm = math.sqrt(sum(value * value for value in stored_vector))
+
+        query_norm = math.sqrt(
+            sum(value * value for value in query_vector)
+        )
+
+        stored_norm = math.sqrt(
+            sum(value * value for value in stored_vector)
+        )
 
         if query_norm == 0 or stored_norm == 0:
             continue
