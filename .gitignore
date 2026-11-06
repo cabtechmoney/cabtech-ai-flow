@@ -4,3 +4,6 @@ __pycache__/
 *.py[cod]
 venv/
 .venv/
+agent_checkpoints.sqlite
+agent_checkpoints.sqlite-shm
+agent_checkpoints.sqlite-wal
